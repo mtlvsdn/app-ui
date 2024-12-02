@@ -13,27 +13,31 @@ function App() {
       id: 1,
       title: "Title 1",
       content: "Content 1",
+      image: null,
     },
     {
       id: 2,
-       title: "Title 2",
+      title: "Title 2",
       content: "Content 2",
+      image: null,
     },
     {
       id: 3,
       title: "Title 3",
       content: "Content 3",
+      image: null,
     },
     {
       id: 4,
       title: "Title 4",
       content: "Content 4",
+      image: null,
     } 
   ]);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-
+  const [image, setImage] = useState(null); // New state for the image
   const [selectedNote, setSelectedNote] = useState (null);
 
   const handleNoteClick = (note) => {
@@ -51,11 +55,13 @@ function App() {
       id: notes.length+1,
       title: title,
       content: content,
+      image: image, // Include image in the new note
     }
 
     setNotes([newNote, ...notes]);
     setTitle("");
     setContent("");
+    setImage(null); //sets a new image as null value
   };
 
   const handleUpdateNote  = (event) => {
@@ -68,6 +74,7 @@ function App() {
       id: selectedNote.id,
       title: title,
       content: content,
+      image: image, // Include updated image
     }
 
     const updatedNotesList = notes.map((note) =>
@@ -80,18 +87,33 @@ function App() {
     setTitle("")
     setContent("")
     setSelectedNote(null);
+    setImage(null); //updates the value of the image to null
   };
 
   const handleCancel = () => {
     setTitle("")
     setContent("")
     setSelectedNote(null);
+    setImage(null); //updates the value of the image to null
   };
 
   const deleteNote = (event, noteId) => {
     event.stopPropagation();
     const updatedNotes = notes.filter((note) => note.id !== noteId);
     setNotes(updatedNotes);
+  };
+
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setImage(reader.result); // Store image as a base64 string
+    };
+
+    if (file) {
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -113,6 +135,7 @@ function App() {
         rows={10}
         required
       ></textarea>
+       <input type="file" accept="image/*" onChange={handleImageChange}></input>
 
       {selectedNote ? (
         <div className='edit-buttons'>
@@ -132,6 +155,7 @@ function App() {
           </div>
           <h2>{note.title}</h2>
           <p>{note.content}</p>
+          {note.image && <img src={note.image} alt="Note" style={{ width: "100%" }} />}
         </div>
       ))}
     </div>
