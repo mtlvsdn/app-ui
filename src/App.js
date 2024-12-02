@@ -11,40 +11,66 @@ function App() {
   const [notes, setNotes] = useState([
     {
       id: 1,
+      subject: "Matematica",
       title: "Title 1",
       content: "Content 1",
       image: null,
+      file: null,
+      date: new Date().toLocaleString(),
     },
     {
       id: 2,
+      subject: "Informatica",
       title: "Title 2",
       content: "Content 2",
       image: null,
+      file: null,
+      date: new Date().toLocaleString(),
     },
     {
       id: 3,
+      subject: "Economie",
       title: "Title 3",
       content: "Content 3",
       image: null,
+      file: null,
+      date: new Date().toLocaleString(),
     },
     {
       id: 4,
+      subject: "Contabilitate",
       title: "Title 4",
       content: "Content 4",
       image: null,
+      file: null,
+      date: new Date().toLocaleString(),
     } 
   ]);
 
+  const [subject, setSubject] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null); // New state for the image
   const [file, setFile] = useState(null);
   const [selectedNote, setSelectedNote] = useState (null);
+  const [isSorted, setIsSorted] = useState(false);
+
+  const handleSort = () => {
+    const sortedNotes = [...notes].sort((a, b) => {
+      // Case-insensitive sorting
+      return a.subject.localeCompare(b.subject);
+    });
+    setNotes(sortedNotes);
+    setIsSorted(!isSorted);
+  };
 
   const handleNoteClick = (note) => {
     setSelectedNote(note);
+    setSubject(note.subject);
     setTitle(note.title);
     setContent(note.content);
+    setImage(note.image);
+    setFile(note.file);
   }
 
   const handleAddNote  = (event) => {
@@ -54,13 +80,16 @@ function App() {
 
     const newNote = {
       id: notes.length+1,
+      subject: subject,
       title: title,
       content: content,
       image: image, // Include image in the new note
       file: file,
+      date: new Date().toLocaleString(),
     }
 
     setNotes([newNote, ...notes]);
+    setSubject("");
     setTitle("");
     setContent("");
     setImage(null); //sets a new image as null value
@@ -74,10 +103,12 @@ function App() {
 
     const updatedNote = {
       id: selectedNote.id,
+      subject: subject,
       title: title,
       content: content,
       image: image, // Include updated image
       file: file,
+      date: new Date().toLocaleString(),
     }
 
     const updatedNotesList = notes.map((note) =>
@@ -87,6 +118,7 @@ function App() {
     )
 
     setNotes(updatedNotesList)
+    setSubject("")
     setTitle("")
     setContent("")
     setSelectedNote(null);
@@ -95,10 +127,12 @@ function App() {
   };
 
   const handleCancel = () => {
+    setSubject("")
     setTitle("")
     setContent("")
     setSelectedNote(null);
     setImage(null); //updates the value of the image to null
+    setFile(null);
   };
 
   const deleteNote = (event, noteId) => {
@@ -132,34 +166,50 @@ function App() {
 
   return (
    <div className="app-container"> 
-    <form className="note-form" onSubmit={(event) => selectedNote
-      ? handleUpdateNote(event)
-      : handleAddNote(event)
-    }>
-      <input
-        value={title}
-        onChange={(event)=>setTitle(event.target.value)}
-        placeholder="Title"
-        required
-      ></input>
-      <textarea
-        value={content}
-        onChange={(event)=>setContent(event.target.value)}
-        placeholder="Content"
-        rows={10}
-        required
-      ></textarea>
-       <input type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileChange}></input>
+   <div>
+      <form className="note-form" onSubmit={(event) => selectedNote
+        ? handleUpdateNote(event)
+        : handleAddNote(event)
+      }>
+        <input
+          value={subject}
+          onChange={(event)=>setSubject(event.target.value)}
+          placeholder="Subject"
+          required
+        ></input>
+        <input
+          value={title}
+          onChange={(event)=>setTitle(event.target.value)}
+          placeholder="Title"
+          required
+        ></input>
+        <textarea
+          value={content}
+          onChange={(event)=>setContent(event.target.value)}
+          placeholder="Content"
+          rows={10}
+          required
+        ></textarea>
+        <input type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileChange}></input>
 
-      {selectedNote ? (
-        <div className='edit-buttons'>
-          <button type="submit">Save</button>
-          <button onClick={handleCancel}>Cancel</button>
-        </div>
-      ) : (
-        <button type="submit">Add Note</button>
-      )}
-    </form>
+        {selectedNote ? (
+          <div className='edit-buttons'>
+            <button type="submit">Save</button>
+            <button className="cancel_button" onClick={handleCancel}>Cancel</button>
+          </div>
+        ) : (
+          <button type="submit">Add Note</button>
+        )}
+      </form>
+
+      <div className='empty'></div>
+      <button 
+          className="sort-button" 
+          onClick={handleSort}
+        >{"Sort by Subject"}
+        </button>
+    </div>
+
     <div className="notes-grid">
       {notes.map((note)=> (
         <div className="note-item"
@@ -167,6 +217,7 @@ function App() {
           <div className="notes-header">
             <button onClick={(event) => deleteNote(event, note.id)}>x</button>
           </div>
+          <div className='subject_wrapper'><h3 className='subject'>{note.subject}</h3></div>
           <h2>{note.title}</h2>
           <p>{note.content}</p>
           {note.image && <img src={note.image} alt="Note" style={{ width: "100%" }} />}
@@ -190,6 +241,7 @@ function App() {
                 Download {note.file.name}
               </a>
             )}
+          <p className="note-date">Last modified: {note.date}</p>
         </div>
       ))}
     </div>

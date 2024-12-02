@@ -90,3 +90,58 @@ textarea, input {
 .edit-buttons button {
   flex: 1;
 }
+
+.edit-buttons .cancel_button {
+  background-color: rgb(220, 53, 69) !important; /* red color */
+}
+
+.edit-buttons .cancel_button:hover {
+  background-color: rgb(200, 35, 51) !important; /* darker red on hover */
+}
+
+.subject_wrapper {
+  display: inline-block; /* Makes the wrapper fit the content */
+  margin-bottom: 10px;
+}
+
+.subject {
+  display: inline; /* Makes the text flow inline */
+  font-size: 0.8em;
+  background-color: lightblue;
+  padding: 2px 8px; /* Reduce vertical padding, keep horizontal padding */
+  border-radius: 10px;
+  white-space: nowrap; /* Prevents text from wrapping */
+}
+
+.subject:hover {
+  background-color: lightgrey;
+}
+
+.sort-button {
+  width: 200px;
+  height: 50px; 
+  margin-bottom: 20px;
+  border-radius: 5px;
+  background-color: rgb(64, 154, 184);
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  color: white;
+  cursor: pointer;
+}
+
+.sort-button:hover {
+  background-color: rgb(106, 175, 198);
+}
+
+.empty {
+  height: 20px;
+  width: 20px;
+}
+
+.note-date {
+  font-size: 0.8em;
+  color: #555;
+  margin-top: auto;  /* This will push the date to the bottom of the note */
+  font-style: italic;
+}
