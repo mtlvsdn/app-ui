@@ -38,6 +38,7 @@ function App() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null); // New state for the image
+  const [file, setFile] = useState(null);
   const [selectedNote, setSelectedNote] = useState (null);
 
   const handleNoteClick = (note) => {
@@ -56,6 +57,7 @@ function App() {
       title: title,
       content: content,
       image: image, // Include image in the new note
+      file: file,
     }
 
     setNotes([newNote, ...notes]);
@@ -75,6 +77,7 @@ function App() {
       title: title,
       content: content,
       image: image, // Include updated image
+      file: file,
     }
 
     const updatedNotesList = notes.map((note) =>
@@ -88,6 +91,7 @@ function App() {
     setContent("")
     setSelectedNote(null);
     setImage(null); //updates the value of the image to null
+    setFile(null);
   };
 
   const handleCancel = () => {
@@ -103,18 +107,28 @@ function App() {
     setNotes(updatedNotes);
   };
 
-  const handleImageChange = (event) => {
+  const handleFileChange = (event) => {
     const file = event.target.files[0];
+  
+    if (!file) return;
+  
     const reader = new FileReader();
-
+  
     reader.onload = () => {
-      setImage(reader.result); // Store image as a base64 string
+      if (file.type.startsWith("image/")) {
+        setImage(reader.result); // For images
+      } else {
+        setFile({
+          name: file.name,
+          type: file.type,
+          url: reader.result, // Base64 or URL
+        });
+      }
     };
-
-    if (file) {
-      reader.readAsDataURL(file);
-    }
+  
+    reader.readAsDataURL(file);
   };
+  
 
   return (
    <div className="app-container"> 
@@ -135,7 +149,7 @@ function App() {
         rows={10}
         required
       ></textarea>
-       <input type="file" accept="image/*" onChange={handleImageChange}></input>
+       <input type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileChange}></input>
 
       {selectedNote ? (
         <div className='edit-buttons'>
@@ -156,6 +170,26 @@ function App() {
           <h2>{note.title}</h2>
           <p>{note.content}</p>
           {note.image && <img src={note.image} alt="Note" style={{ width: "100%" }} />}
+          {note.file && note.file.type === "application/pdf" && (
+            <iframe
+              src={note.file.url}
+              title="PDF Preview"
+              style={{ width: "100%", height: "400px" }}
+            ></iframe>
+          )}
+          {note.file && note.file.type.includes("word") && (
+            <a href={note.file.url} target="_blank" rel="noopener noreferrer">
+              View or Download Word Document
+            </a>
+          )}
+          {note.file &&
+            !note.file.type.includes("image") &&
+            !note.file.type.includes("pdf") &&
+            !note.file.type.includes("word") && (
+              <a href={note.file.url} target="_blank" rel="noopener noreferrer">
+                Download {note.file.name}
+              </a>
+            )}
         </div>
       ))}
     </div>
