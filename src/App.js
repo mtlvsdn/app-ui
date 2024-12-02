@@ -54,6 +54,7 @@ function App() {
   const [file, setFile] = useState(null);
   const [selectedNote, setSelectedNote] = useState (null);
   const [isSorted, setIsSorted] = useState(false);
+  const [isSortedByDate, setIsSortedByDate] = useState(false);
 
   const handleSort = () => {
     const sortedNotes = [...notes].sort((a, b) => {
@@ -62,6 +63,18 @@ function App() {
     });
     setNotes(sortedNotes);
     setIsSorted(!isSorted);
+  };
+
+  const handleSortByDate = () => {
+    const sortedNotes = [...notes].sort((a, b) => {
+      // Convert date strings to Date objects for comparison
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      // Sort in descending order (newest first)
+      return dateB - dateA;
+    });
+    setNotes(sortedNotes);
+    setIsSortedByDate(!isSortedByDate);
   };
 
   const handleNoteClick = (note) => {
@@ -207,6 +220,12 @@ function App() {
           className="sort-button" 
           onClick={handleSort}
         >{"Sort by Subject"}
+        </button>
+        <button 
+          className="sort-button" 
+          onClick={handleSortByDate}
+        >
+          Sort by Date
         </button>
     </div>
 
