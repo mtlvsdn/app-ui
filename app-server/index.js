@@ -56,7 +56,7 @@ app.post("/signup", async(req, res) => {
         return res.json({
             error: true,
             messsage: "An account already exists with this email address",
-        })
+        });
     }
 
     const user = new User({
@@ -67,6 +67,17 @@ app.post("/signup", async(req, res) => {
     });
     
     await user.save();
+
+    const accessToken = jwt.sign({user}, proccess.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "3600m",
+    });
+
+    return res.json({
+        error: false,
+        user,
+        accessToken,
+        message: "Registration Successful",
+    });
 });
 
 app.listen(3002);
