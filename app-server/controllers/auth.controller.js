@@ -1,33 +1,84 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const authRoutes = require('./routes/auth.routes');
-const notesRoutes = require('./routes/notes.routes');
+const User = require('../models/user.model');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-const app = express();
+const signup = async (req, res) => {
+  try {
+    const { fullName, username, password } = req.body;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+    // Check if user already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username already exists' });
+    }
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+    // Create new user
+    const user = new User({
+      fullName,
+      username,
+      password
+    });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/notes', notesRoutes);
+    await user.save();
 
-// Basic error handling
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log("Server is running on port ${PORT}");
-});
+    res.status(201).json({
+      message: 'User created successfully',
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        username: user.username
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating user', error: error.message });
+  }
+};
+
+const login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Find user
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        username: user.username
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error during login', error: error.message });
+  }
+};
+
+module.exports = {
+  signup,
+  login
+};
