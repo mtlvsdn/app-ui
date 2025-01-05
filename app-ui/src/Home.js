@@ -4,6 +4,7 @@ import SearchComponent from './SearchComponent';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login';
 import Home from './Home';
+import React, {useEffect } from 'react';
 
 // const Note = {
 //   id: Number,
@@ -139,6 +140,27 @@ const handleSearch = (searchTerm, category) => {
     setIsSortedByDate(!isSortedByDate);
   };
 
+  const fetchNotes = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/notes', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+  
+      if (response.ok) {
+        const fetchedNotes = await response.json();
+        setNotes(fetchedNotes);
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    }
+  };
+  
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
   const handleNoteClick = (note) => {
     setSelectedNote(note);
     setSubject(note.subject);
@@ -149,28 +171,42 @@ const handleSearch = (searchTerm, category) => {
     setTags(note.tags || []);
   }
 
-  const handleAddNote  = (event) => {
+  const handleAddNote = async (event) => {
     event.preventDefault();
-    console.log("title: ", title);
-    console.log("content: ", content);
-
+    
     const newNote = {
-      id: notes.length+1,
-      subject: subject,
-      title: title,
-      content: content,
-      image: image, // Include image in the new note
-      file: file,
-      date: new Date().toLocaleString(),
-      tags: tags, 
+      subject,
+      title,
+      content,
+      image,
+      file,
+      tags
+    };
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(newNote)
+      });
+  
+      if (response.ok) {
+        const savedNote = await response.json();
+        setNotes([savedNote, ...notes]);
+        setSubject("");
+        setTitle("");
+        setContent("");
+        setImage(null);
+        setTags([]);
+      } else {
+        console.error('Failed to save note');
+      }
+    } catch (error) {
+      console.error('Error saving note:', error);
     }
-
-    setNotes([newNote, ...notes]);
-    setSubject("");
-    setTitle("");
-    setContent("");
-    setImage(null); //sets a new image as null value
-    setTags([]);
   };
 
   const handleUpdateNote  = (event) => {
@@ -216,10 +252,23 @@ const handleSearch = (searchTerm, category) => {
     setTags([]);
   };
 
-  const deleteNote = (event, noteId) => {
+  const deleteNote = async (event, noteId) => {
     event.stopPropagation();
-    const updatedNotes = notes.filter((note) => note.id !== noteId);
-    setNotes(updatedNotes);
+    try {
+      const response = await fetch(`http://localhost:5000/api/notes/${noteId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+  
+      if (response.ok) {
+        const updatedNotes = notes.filter((note) => note._id !== noteId);
+        setNotes(updatedNotes);
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
   };
 
   const handleFileChange = (event) => {

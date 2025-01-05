@@ -40,7 +40,7 @@ const Signup = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
@@ -51,7 +51,7 @@ const Signup = () => {
 
     // Validate username
     if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
+      newErrors.username = 'Email Address is required';
     }
 
     // Validate password
@@ -75,6 +75,33 @@ const Signup = () => {
     // TODO: Handle signup logic here
     console.log('Form submitted:', formData);
     navigate('/login'); // Redirect to login after successful signup
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          username: formData.username,
+          password: formData.password
+        }),
+      });
+
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        navigate('/login');
+      } else {
+        setErrors({ submit: data.message });
+      }
+    } catch (error) {
+      setErrors({ submit: 'Signup failed. Please try again.' });
+    }
   };
 
   return (
@@ -100,7 +127,7 @@ const Signup = () => {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Username"
+              placeholder="Email Address"
               className={`login-input ${errors.username ? 'error' : ''}`}
             />
             {errors.username && <span className="error-message">{errors.username}</span>}

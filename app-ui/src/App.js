@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react'
 import Login from './Login';
 import Signup from './Signup';
 import Home from './Home';
 import './App.css';
 
 function App() {
-  const isAuthenticated = false;
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
 
   return (
     <Router>
