@@ -44,17 +44,24 @@ const signup = async (req, res) => {
 
 const login = async (req, res) => {
   try {
+    console.log('Login request received:', req.body); // Debug log
     const { username, password } = req.body;
 
     // Find user
     const user = await User.findOne({ username });
+    console.log('User found:', user ? 'Yes' : 'No'); // Debug log
+
     if (!user) {
+      console.log('No user found with this username'); // Debug log
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log('Password valid:', isPasswordValid); // Debug log
+
     if (!isPasswordValid) {
+      console.log('Invalid password'); // Debug log
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -74,6 +81,7 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Login error:', error); // Debug log
     res.status(500).json({ message: 'Error during login', error: error.message });
   }
 };

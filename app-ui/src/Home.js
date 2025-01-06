@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './Login';
 import Home from './Home';
 import React, {useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // const Note = {
 //   id: Number,
@@ -67,8 +68,10 @@ function App() {
   const [isSortedByDate, setIsSortedByDate] = useState(false);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const [userName, setUserName] = useState("");
 
 const [filteredNotes, setFilteredNotes] = useState(notes);
+
 
 const handleSearch = (searchTerm, category) => {
   if (!searchTerm.trim()) {
@@ -156,8 +159,97 @@ const handleSearch = (searchTerm, category) => {
       console.error('Error fetching notes:', error);
     }
   };
-  
+
+
   useEffect(() => {
+    const fetchNotes = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+  
+      try {
+        const response = await fetch('http://localhost:5000/api/notes', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setNotes(data);
+          setFilteredNotes(data);
+          
+          // Only add template notes if there are NO notes at all
+          if (data.length === 0) {
+            const templateNotes = [
+              {
+                subject: "Matematica",
+                title: "Title 1",
+                content: "Content 1",
+                image: null,
+                file: null,
+                date: new Date().toLocaleString(),
+                tags: ["cool", "inspirational", "brave", "math"],
+              },
+              {
+                subject: "Informatica",
+                title: "Title 2",
+                content: "Content 2",
+                image: null,
+                file: null,
+                date: new Date().toLocaleString(),
+                tags: ["cool", "inspirational", "brave", "info"],
+              },
+              {
+                subject: "Economie",
+                title: "Title 3",
+                content: "Content 3",
+                image: null,
+                file: null,
+                date: new Date().toLocaleString(),
+                tags: ["cool", "inspirational", "brave", "economics 2.0"],
+              },
+              {
+                subject: "Contabilitate",
+                title: "Title 4",
+                content: "Content 4",
+                image: null,
+                file: null,
+                date: new Date().toLocaleString(),
+                tags: ["cool", "inspirational", "brave", "accounting"],
+              }
+            ];
+  
+            // Save template notes one by one
+            for (const note of templateNotes) {
+              await fetch('http://localhost:5000/api/notes', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(note)
+              });
+            }
+  
+            // Fetch notes again after adding templates
+            const updatedResponse = await fetch('http://localhost:5000/api/notes', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (updatedResponse.ok) {
+              const updatedData = await updatedResponse.json();
+              setNotes(updatedData);
+              setFilteredNotes(updatedData);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching notes:', error);
+      }
+    };
+  
     fetchNotes();
   }, []);
 
@@ -174,13 +266,20 @@ const handleSearch = (searchTerm, category) => {
   const handleAddNote = async (event) => {
     event.preventDefault();
     
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No authentication token found');
+      return;
+    }
+  
     const newNote = {
       subject,
       title,
       content,
       image,
       file,
-      tags
+      tags,
+      date: new Date().toLocaleString()
     };
   
     try {
@@ -188,21 +287,26 @@ const handleSearch = (searchTerm, category) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(newNote)
       });
   
       if (response.ok) {
         const savedNote = await response.json();
-        setNotes([savedNote, ...notes]);
+        setNotes(prevNotes => [savedNote, ...prevNotes]);
+        setFilteredNotes(prevNotes => [savedNote, ...prevNotes]); // Update filtered notes too
+        
+        // Clear form
         setSubject("");
         setTitle("");
         setContent("");
         setImage(null);
+        setFile(null);
         setTags([]);
       } else {
-        console.error('Failed to save note');
+        const errorData = await response.json();
+        console.error('Failed to save note:', errorData.message);
       }
     } catch (error) {
       console.error('Error saving note:', error);
@@ -254,17 +358,24 @@ const handleSearch = (searchTerm, category) => {
 
   const deleteNote = async (event, noteId) => {
     event.stopPropagation();
+    
+    const token = localStorage.getItem('token');
+    if (!token) return;
+  
     try {
       const response = await fetch(`http://localhost:5000/api/notes/${noteId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
   
       if (response.ok) {
-        const updatedNotes = notes.filter((note) => note._id !== noteId);
-        setNotes(updatedNotes);
+        // Update both notes and filteredNotes state
+        setNotes(prevNotes => prevNotes.filter(note => note._id !== noteId));
+        setFilteredNotes(prevNotes => prevNotes.filter(note => note._id !== noteId));
+      } else {
+        console.error('Failed to delete note');
       }
     } catch (error) {
       console.error('Error deleting note:', error);
@@ -293,21 +404,47 @@ const handleSearch = (searchTerm, category) => {
     reader.readAsDataURL(file);
   };
   
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('user'));
+    if (userData) {
+      setUserName(userData.fullName);
+    }
+  }, []);
+  
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
 
   return (
     <div>
-      <nav className="toolbar">
-      <div className="toolbar-brand">
-        NotesApp
-      </div>
-      <div className="toolbar-content">
-        <SearchComponent onSearch={handleSearch} />
-        <div className="user-section">
-          <span className="username">John Doe</span>
-          <button className="logout-button">Log Out</button>
-      </div>
-</div>
-    </nav>
+                <nav className="toolbar">
+            <div className="toolbar-brand">
+              NotesApp
+            </div>
+            <div className="toolbar-content">
+              <SearchComponent onSearch={handleSearch} />
+              <div className="user-section">
+                <span className="username">{userName || 'User'}</span>
+                <button 
+                  className="logout-button"
+                  onClick={handleLogout}
+                  style={{
+                    backgroundColor: 'rgb(64, 154, 184)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Log Out
+                </button>
+              </div>
+            </div>
+          </nav>
     <div className="app-container"> 
     <div>
         <form className="note-form" onSubmit={(event) => selectedNote
@@ -388,7 +525,7 @@ const handleSearch = (searchTerm, category) => {
           <div className="note-item"
           onClick={() => handleNoteClick(note)}>
             <div className="notes-header">
-              <button onClick={(event) => deleteNote(event, note.id)}>x</button>
+            <button onClick={(event) => deleteNote(event, note._id)}>x</button>
             </div>
             <div className='subject_wrapper'><h3 className='subject'>{note.subject}</h3></div>
             <h2>{note.title}</h2>

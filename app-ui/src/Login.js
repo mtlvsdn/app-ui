@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
+const Login = ({ setIsAuthenticated }) => {  // Add setIsAuthenticated as a prop
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const handleSignup = () => {  // Add the handleSignup function
+    navigate('/signup');
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    // TODO: Add actual authentication logic here
-
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
@@ -24,22 +26,19 @@ const Login = () => {
       });
 
       const data = await response.json();
-
+      
       if (response.ok) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setIsAuthenticated(true);
         navigate('/home');
       } else {
         setError(data.message);
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError('Login failed. Please try again.');
     }
-    console.log('Login attempted with:', email, password);
-    navigate('/home'); // Redirect to home page after successful login
-  };
-
-  const handleSignup = () => {
-    navigate('/signup'); // This will navigate to the signup page
   };
 
   return (
