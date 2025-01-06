@@ -103,7 +103,7 @@ const Signup = () => {
       setErrors({ submit: 'Signup failed. Please try again.' });
     }
   };
-
+  
   return (
     <div className="login-container">
       <div className="login-box">
