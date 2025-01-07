@@ -123,25 +123,23 @@ const handleSearch = (searchTerm, category) => {
 
 
   const handleSort = () => {
-    const sortedNotes = [...notes].sort((a, b) => {
-      // Case-insensitive sorting
+    const sortedNotes = [...filteredNotes].sort((a, b) => {
       return a.subject.localeCompare(b.subject);
     });
-    setNotes(sortedNotes);
+    setFilteredNotes(sortedNotes);
     setIsSorted(!isSorted);
   };
-
+  
   const handleSortByDate = () => {
-    const sortedNotes = [...notes].sort((a, b) => {
-      // Convert date strings to Date objects for comparison
+    const sortedNotes = [...filteredNotes].sort((a, b) => {
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
-      // Sort in descending order (newest first)
-      return dateB - dateA;
+      return isSortedByDate ? dateA - dateB : dateB - dateA;
     });
-    setNotes(sortedNotes);
+    setFilteredNotes(sortedNotes);
     setIsSortedByDate(!isSortedByDate);
   };
+  
 
   const fetchNotes = async () => {
     try {
@@ -261,8 +259,8 @@ const handleSearch = (searchTerm, category) => {
     setImage(note.image);
     setFile(note.file);
     setTags(note.tags || []);
-  }
-
+  };
+  
   const handleAddNote = async (event) => {
     event.preventDefault();
     
@@ -313,37 +311,64 @@ const handleSearch = (searchTerm, category) => {
     }
   };
 
-  const handleUpdateNote  = (event) => {
+  const handleUpdateNote = async (event) => {
     event.preventDefault();
-    if(!selectedNote) {
+    if (!selectedNote) {
       return;
     }
-
+  
+    const token = localStorage.getItem('token');
+    if (!token) return;
+  
     const updatedNote = {
-      id: selectedNote.id,
-      subject: subject,
-      title: title,
-      content: content,
-      image: image, // Include updated image
-      file: file,
+      subject,
+      title,
+      content,
+      image,
+      file,
       date: new Date().toLocaleString(),
-      tags: tags,
+      tags
+    };
+  
+    try {
+      const response = await fetch(`http://localhost:5000/api/notes/${selectedNote._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedNote)
+      });
+  
+      if (response.ok) {
+        const updatedNoteFromServer = await response.json();
+        
+        setNotes(prevNotes => 
+          prevNotes.map(note => 
+            note._id === selectedNote._id ? updatedNoteFromServer : note
+          )
+        );
+        
+        setFilteredNotes(prevNotes => 
+          prevNotes.map(note => 
+            note._id === selectedNote._id ? updatedNoteFromServer : note
+          )
+        );
+  
+        // Clear form
+        setSubject("");
+        setTitle("");
+        setContent("");
+        setSelectedNote(null);
+        setImage(null);
+        setFile(null);
+        setTags([]);
+      } else {
+        console.error('Failed to update note');
+      }
+    } catch (error) {
+      console.error('Error updating note:', error);
     }
-
-    const updatedNotesList = notes.map((note) =>
-      note.id === selectedNote.id
-      ? updatedNote
-      :note
-    )
-
-    setNotes(updatedNotesList)
-    setSubject("")
-    setTitle("")
-    setContent("")
-    setSelectedNote(null);
-    setImage(null); //updates the value of the image to null
-    setFile(null);
-    setTags([]);
   };
 
   const handleCancel = () => {
@@ -384,23 +409,27 @@ const handleSearch = (searchTerm, category) => {
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-  
+    
     if (!file) return;
-  
+    
     const reader = new FileReader();
-  
+    
     reader.onload = () => {
+      const result = reader.result;
+      
       if (file.type.startsWith("image/")) {
-        setImage(reader.result); // For images
+        setImage(result);
+        setFile(null);
       } else {
         setFile({
           name: file.name,
           type: file.type,
-          url: reader.result, // Base64 or URL
+          url: result
         });
+        setImage(null);
       }
     };
-  
+    
     reader.readAsDataURL(file);
   };
   

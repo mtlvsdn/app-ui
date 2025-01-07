@@ -3,7 +3,12 @@ const Note = require('../models/note.model');
 const createNote = async (req, res) => {
   try {
     const { subject, title, content, image, file, tags } = req.body;
-    const userId = req.user.userId; // From auth middleware
+    const userId = req.user.userId;
+
+    // Validate image size if present
+    if (image && image.length > 5242880) { // 5MB limit
+      return res.status(400).json({ message: 'Image size should be less than 5MB' });
+    }
 
     const note = new Note({
       userId,
@@ -12,12 +17,14 @@ const createNote = async (req, res) => {
       content,
       image,
       file,
-      tags
+      tags,
+      date: new Date()
     });
 
     await note.save();
     res.status(201).json(note);
   } catch (error) {
+    console.error('Error creating note:', error);
     res.status(500).json({ message: 'Error creating note', error: error.message });
   }
 };
@@ -38,9 +45,14 @@ const updateNote = async (req, res) => {
     const update = req.body;
     const userId = req.user.userId;
 
+    // Validate image size if present
+    if (update.image && update.image.length > 5242880) { // 5MB limit
+      return res.status(400).json({ message: 'Image size should be less than 5MB' });
+    }
+
     const note = await Note.findOneAndUpdate(
       { _id: id, userId },
-      update,
+      { ...update, date: new Date() },
       { new: true }
     );
 
@@ -50,6 +62,7 @@ const updateNote = async (req, res) => {
 
     res.json(note);
   } catch (error) {
+    console.error('Error updating note:', error);
     res.status(500).json({ message: 'Error updating note', error: error.message });
   }
 };
